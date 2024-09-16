@@ -76,6 +76,12 @@ Key Conventions
 | Psycopg2-binary    | PostgreSQL database adapter for Python       |
 | Python-Multipart   | Handling multipart/form-data for file uploads| 
 
-npm install react react-dom shadcn-ui axios react-router-dom
+- Install and configure Next.js.
+<!-- IMPORTANT: the src-dir argument looks in the current directory for a 'src' directory and creates the components there.  -->
+<!-- Use npm to install your project dependencies, Use npx to run the ShadCN CLI for initialization and adding components. -->
+1. ```cd frontend```
+2. ```npx create-next-app@latest .```
+3. ```npx shadcn@latest init -d --src-dir```
+4. ```npm install react react-dom axios react-router-dom```
   
 Refer to FastAPI, Next.js, and Vercel AI SDK documentation for best practices.

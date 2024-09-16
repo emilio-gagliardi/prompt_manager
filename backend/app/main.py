@@ -1,7 +1,8 @@
 # backend/app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from contextlib import asynccontextmanager
 from sqlalchemy.exc import OperationalError
-from .database import SessionLocal
+from .database import SessionLocal, check_database_connection
 from .config import get_settings
 from .routers import projects, prompts, feedback
 
@@ -9,18 +10,13 @@ settings = get_settings()
 
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup_event():
-    # Check database connection
-    try:
-        db = SessionLocal()
-        db.execute('SELECT 1')
-    except OperationalError:
-        app.state.database_available = False
-    else:
-        app.state.database_available = True
-    finally:
-        db.close()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db = SessionLocal()
+
+    await check_database_connection(db)
+    yield
+    db.close()
 
 # Include your routers
 app.include_router(projects.router)

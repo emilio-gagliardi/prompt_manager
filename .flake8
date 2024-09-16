@@ -1,0 +1,6 @@
+[flake8]
+   max-line-length = 79
+   max-complexity = 10
+   extend-ignore = E203, E266, E501
+   import-order-style = google
+   application-import-names = prompt_manager
