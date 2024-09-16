@@ -83,24 +83,24 @@ prompt_manager/
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── App.js
-│   │   ├── index.js
-│   │   └── styles/
-│   ├── package.json
-│   ├── package-lock.json
-│   └── Dockerfile
-├── docker-compose.yml
-├── README.md
-├── .env.local
-├── .cursorrules
-├── .dockerignore
-└── .gitignore
+│   ├── prompt_manager/
+│   │   ├── public/
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   ├── App.js
+│   │   │   ├── index.js
+│   │   │   └── styles/
+│   │   ├── package.json
+│   │   ├── package-lock.json
+│   │   └── Dockerfile
+│   ├── docker-compose.yml
+│   ├── README.md
+│   ├── .env.local
+│   ├── .cursorrules
+│   ├── .dockerignore
+│   └── .gitignore
 ```
-<!-- TODO: add .env.local and insert correct db credentials -->
 - .env.local: Local environment variables. 
     # .env.local
     DATABASE_USER=your_db_username
@@ -126,7 +126,7 @@ prompt_manager/
   - Dockerfile: Docker configuration for the backend.
 
 #### Settings Class
-<!-- TODO: add a config.py file to the backend/app/ directory. -->
+
 # backend/app/config.py
 ```python
 from pydantic import BaseSettings, Field
@@ -172,12 +172,13 @@ def get_settings() -> Settings:
 
 - frontend/
   - Contains the React application.
-  - src/: Source code for the frontend.
-    - components/: Reusable React components.
-    - pages/: Page components for routing.
-    - styles/: CSS and styling files.
-  - package.json: Node.js dependencies.
-  - Dockerfile: Docker configuration for the frontend.
+  - prompt_manager/
+    - src/: Source code for the frontend.
+      - components/: Reusable React components.
+      - pages/: Page components for routing.
+      - styles/: CSS and styling files.
+    - package.json: Node.js dependencies.
+    - Dockerfile: Docker configuration for the frontend.
 
 - docker-compose.yml: Docker Compose configuration to run multi-container applications.
 - README.md: Project documentation.

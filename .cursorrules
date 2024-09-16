@@ -32,7 +32,7 @@ You are an expert in Python, FastAPI, Next.js, and ShadCN UI components.
     axiosInstance.get('/projects/')
     .then(response => setProjects(response.data))
     .catch(error => console.error(error));```
-
+- Important. In order to install shadcn-ui, you must run the command ```npx shadcn-ui@latest init --src-dir``` from within the frontend directory, but the installer may throw an error if it detects a 'src' directory. Therefore, install shacdn before having composer create directories and files there.
 ## Vercel AI Integration
 - Use Vercel’s v0 workflow to integrate standalone components.
 
@@ -80,7 +80,7 @@ Key Conventions
 <!-- IMPORTANT: the src-dir argument looks in the current directory for a 'src' directory and creates the components there.  -->
 <!-- Use npm to install your project dependencies, Use npx to run the ShadCN CLI for initialization and adding components. -->
 1. ```cd frontend```
-2. ```npx create-next-app@latest .```
+2. ```npx create-next-app@latest .``` (Optional)
 3. ```npx shadcn@latest init -d --src-dir```
 4. ```npm install react react-dom axios react-router-dom```
   
