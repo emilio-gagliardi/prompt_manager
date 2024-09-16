@@ -100,7 +100,8 @@ prompt_manager/
 ├── .dockerignore
 └── .gitignore
 ```
-- .env.local: Local environment variables. Add to .gitignore.
+<!-- TODO: add .env.local and insert correct db credentials -->
+- .env.local: Local environment variables. 
     # .env.local
     DATABASE_USER=your_db_username
     DATABASE_PASSWORD=your_db_password
