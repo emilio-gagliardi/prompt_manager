@@ -24,6 +24,14 @@ You are an expert in Python, FastAPI, Next.js, and ShadCN UI components.
 - Use Tailwind CSS and Radix UI for styling; adopt a mobile-first approach.
 - For form validation, use Zod and `react-hook-form`.
 - Use dynamic imports for non-critical components.
+- Ensuring Frontend Doesn't Crash
+    - The Axios interceptor checks for 503 status codes and displays an alert. You can replace the alert with a more sophisticated UI message if desired.
+    
+    ```import axiosInstance from '../api/axiosInstance';
+
+    axiosInstance.get('/projects/')
+    .then(response => setProjects(response.data))
+    .catch(error => console.error(error));```
 
 ## Vercel AI Integration
 - Use Vercel’s v0 workflow to integrate standalone components.
