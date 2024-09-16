@@ -3,12 +3,14 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
 
+
 class Project(Base):
     __tablename__ = "projects"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False)
     prompts = relationship("Prompt", back_populates="project")
+
 
 class Prompt(Base):
     __tablename__ = "prompts"
@@ -20,6 +22,7 @@ class Prompt(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     project = relationship("Project", back_populates="prompts")
     feedbacks = relationship("PromptFeedback", back_populates="prompt")
+
 
 class PromptFeedback(Base):
     __tablename__ = "prompt_feedbacks"
