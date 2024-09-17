@@ -1,16 +1,20 @@
 # backend/app/dependencies.py
 from fastapi import Depends, HTTPException, status
 from .database import SessionLocal
-from .main import app
+
 
 def get_db():
-    if not app.state.database_available:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database connection could not be established."
-        )
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+
+def check_database_available(db=Depends(get_db)):
+    if not db:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database connection could not be established.",
+        )
+    return db

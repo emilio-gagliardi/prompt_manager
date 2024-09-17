@@ -20,6 +20,8 @@ class Prompt(Base):
     name = Column(String, nullable=False)
     content = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    tags = Column(String, nullable=True)
+    notes = Column(String, nullable=True)
     project = relationship("Project", back_populates="prompts")
     feedbacks = relationship("PromptFeedback", back_populates="prompt")
 

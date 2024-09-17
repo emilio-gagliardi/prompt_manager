@@ -1,4 +1,6 @@
-from pydantic import BaseSettings, Field
+from pathlib import Path
+from pydantic import BaseModel, Field
+from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
@@ -20,7 +22,7 @@ class Settings(BaseSettings):
     logging: LoggingSettings = LoggingSettings()  # Grouped logging settings
 
     class Config:
-        env_file = ".env.local"
+        env_file = Path(__file__).parent.parent.parent / ".env.local"
         env_file_encoding = "utf-8"
 
     def get_db_uri(self) -> str:

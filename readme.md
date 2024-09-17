@@ -88,18 +88,19 @@ prompt_manager/
 │   │   ├── src/
 │   │   │   ├── components/
 │   │   │   ├── pages/
-│   │   │   ├── App.js
-│   │   │   ├── index.js
-│   │   │   └── styles/
+│   │   │   ├── styles/
+│   │   │   ├── app/
+│   │   │   └── lib/
 │   │   ├── package.json
 │   │   ├── package-lock.json
-│   │   └── Dockerfile
-│   ├── docker-compose.yml
-│   ├── README.md
-│   ├── .env.local
-│   ├── .cursorrules
-│   ├── .dockerignore
-│   └── .gitignore
+│   │   └── next.config.js
+│   └── Dockerfile
+├── docker-compose.yml
+├── README.md
+├── .env.local
+├── .cursorrules
+├── .dockerignore
+└── .gitignore
 ```
 - .env.local: Local environment variables. 
     # .env.local
@@ -287,45 +288,31 @@ npm install react react-dom shadcn-ui axios react-router-dom
     ```
 
 ### Section 7: Frontend Development
-<!-- we're using vercel's v0 tool to generate  ShadCN UI components. I'm not sure what the frontend language or framework is. I'll add what I know so far -->
-#### Coding Standards
-- **Language**: JavaScript
-- **Framework**: React
-- **State Management**: React Context API
-- **Routing**: React Router
-- **UI Components**: ShadCN UI
-- **Styling**: Tailwind CSS
-
 #### Key Files and Their Purpose
-- **App.js**: Entry point of the React application, sets up routing.
-- **components/**: Contains reusable UI components like ProjectCard, PromptCard.
-- **pages/**: Contains page components like Dashboard, PromptEditor.
-- **styles/**: Contains global and component-specific styling.
+- **src/app/page.tsx**: Dashboard page component, displays projects and prompt card grids.
+- **src/app/prompt-editor/page.tsx**: Prompt Editor page component, allows editing of a single prompt's data.
+- **src/components/**: Contains reusable UI components like ProjectCard, PromptCard.
+- **src/lib/**: Contains utility functions and shared logic.
+- **src/styles/**: Contains global and component-specific styling.
+
+#### Frontend Page Structure
+1. Dashboard Page
+   - File: `frontend/prompt_manager/src/app/page.tsx`
+   - URL: `/`
+   - Purpose: Displays all projects and their associated prompt card grids.
+
+2. Prompt Editor Page
+   - File: `frontend/prompt_manager/src/app/prompt-editor/page.tsx`
+   - URL: `/prompt-editor`
+   - Purpose: Allows editing and saving of a single prompt's data.
 
 #### Frontend Development Steps
-1. Initialize React Application:
-    ```bash
-    npx create-react-app .
-    ```
-2. Install Dependencies:
-    ```bash
-    npm install react react-dom shadcn-ui axios react-router-dom
-    ```
-3. Set up ShadCN UI:
-    ```bash
-    npx shadcn-ui@latest add
-    ```
-4. Set Up Routing:
-    - Use react-router-dom to navigate between pages.
-5. Implement Components:
-    - **ProjectCard**: Displays project information and its prompts.
-    - **PromptCard**: Displays prompt information and feedback buttons.
-    - **PromptEditor**: Allows editing prompt content and viewing the generated code snippet.
-6. API Integration:
-    - Use Axios for API requests.
-7. Styling:
-    - Apply consistent styling using ShadCN UI components and ensure responsiveness.
-
+1. Set up the Next.js application structure (already done)
+2. Implement the Dashboard page (`src/app/page.tsx`)
+3. Implement the Prompt Editor page (`src/app/prompt-editor/page.tsx`)
+4. Create necessary components in the `src/components/` directory
+5. Implement API integration using Axios
+6. Apply styling using Tailwind CSS and ShadCN UI components
 
 ### Section 8: Database Design
 The database consists of three main tables:
@@ -356,6 +343,17 @@ The database consists of three main tables:
 ### Relationships:
 - One **Project** has many **Prompts**.
 - One **Prompt** has many **PromptFeedbacks**.
+
+### Database User Permissions
+When setting up a new PostgreSQL database and tables for this project, it's crucial to grant the necessary permissions to the database user. Execute the following commands as a superuser (usually postgres) to ensure proper access:
+
+```sql
+-- Replace 'your_user' with the actual username your application is using to connect to the database
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO your_user;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO your_user;
+```
+
+These commands grant the required permissions for the application to interact with all tables and sequences in the public schema. Make sure to run these commands after creating the database and before running the application.
 
 ## API Endpoints
 
@@ -410,38 +408,6 @@ The database consists of three main tables:
   - **db**: PostgreSQL database.
   - **backend**: FastAPI application.
   - **frontend**: React application.
-  <!-- TODO: do not expose db username and password in docker-compose.yml. create .env.local and load environment variables from there. -->
-    ```yaml
-    services:
-    db:
-        image: postgres:15
-        environment:
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: password
-        POSTGRES_DB: prompt_db
-        volumes:
-        - db_data:/var/lib/postgresql/data
-        ports:
-        - "5432:5432"
-
-    backend:
-        build: ./backend
-        depends_on:
-        - db
-        environment:
-        DATABASE_URL: postgresql://postgres:password@db:5432/prompt_db
-        ports:
-        - "8000:8000"
-
-    frontend:
-        build: ./frontend
-        depends_on:
-        - backend
-        ports:
-        - "3000:3000"
-
-    volumes:
-        db_data:
 
 #### backend/dockerfile:
     ```dockerfile
@@ -458,11 +424,11 @@ The database consists of three main tables:
     ```dockerfile
     FROM node:18-alpine
     WORKDIR /app
-    COPY package.json package-lock.json ./
+    COPY prompt_manager/package.json prompt_manager/package-lock.json ./
     RUN npm install
-    COPY . .
+    COPY prompt_manager .
     EXPOSE 3000
-    CMD ["npm", "start"]
+    CMD ["npm", "run", "dev"]
     ```
 ### Environment Variables
 - Use environment variables for sensitive information and configuration.
@@ -496,3 +462,48 @@ The database consists of three main tables:
 - Docker Compose Documentation: https://docs.docker.com/compose/
 - PostgreSQL Documentation: https://www.postgresql.org/docs/current/
 - v0 Documentation: https://v0.dev/
+
+### Section 12: Import Handling and Running FastAPI
+
+#### Import Handling
+In our FastAPI application, we use relative imports to maintain a clean and organized structure. Here's how we handle imports:
+
+1. For importing from within the `app` directory, use relative imports:
+   ```python
+   from .database import SessionLocal
+   from .models import Project
+   ```
+
+2. For importing from sibling directories, use absolute imports starting from `app`:
+   ```python
+   from app.routers import projects, prompts
+   from app.config import get_settings
+   ```
+
+3. For standard library or third-party imports, use regular imports:
+   ```python
+   from fastapi import FastAPI
+   import uvicorn
+   ```
+
+#### Running FastAPI
+To run the FastAPI application:
+
+1. Navigate to the 'backend' directory:
+   ```bash
+   cd backend
+   ```
+
+2. Execute the following command in the terminal:
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port 7070 --reload
+   ```
+
+   This command does the following:
+   - `uvicorn`: The ASGI server we're using to run our FastAPI application
+   - `app.main:app`: Points to the `app` object in `main.py`
+   - `--host 0.0.0.0`: Makes the server accessible from any IP address
+   - `--port 7070`: Runs the server on port 7070
+   - `--reload`: Enables auto-reloading when code changes are detected (useful for development)
+
+The application will start and be accessible at `http://localhost:7070`.
