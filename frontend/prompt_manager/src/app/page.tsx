@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -12,57 +13,47 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { PlusIcon, MoreVerticalIcon, ThumbsUpIcon, ThumbsDownIcon } from 'lucide-react'
 import Link from 'next/link'
-// Lorem ipsum generator function (255 characters)
-const loremIpsum = () => "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint".slice(0, 255)
+import { useRouter } from 'next/navigation'
 
-// Mock data for projects and cards
-const mockProjects = [
-  {
-    id: 1,
-    title: "Conversational AI",
-    cards: [
-      { id: 1, label: "Customer Service Bot", description: loremIpsum() },
-      { id: 2, label: "Language Translator", description: loremIpsum() },
-      { id: 3, label: "Creative Writing Assistant", description: loremIpsum() },
-      { id: 4, label: "Code Explanation Bot", description: loremIpsum() },
-    ]
-  },
-  {
-    id: 2,
-    title: "Data Analysis",
-    cards: [
-      { id: 5, label: "Market Trend Analyzer", description: loremIpsum() },
-      { id: 6, label: "Sentiment Analysis", description: loremIpsum() },
-      { id: 7, label: "Data Visualization Prompt", description: loremIpsum() },
-      { id: 8, label: "Predictive Modeling Assistant", description: loremIpsum() },
-    ]
-  }
-]
+interface Prompt {
+  id: number;
+  name: string;
+  content: string;
+}
+
+interface ProjectWithPrompts {
+  id: number;
+  name: string;
+  prompts: Prompt[];
+}
 
 export default function Page() {
-  const [projects, setProjects] = useState(mockProjects)
+  const [projects, setProjects] = useState<ProjectWithPrompts[]>([])
+  const router = useRouter()
 
-  const handleAddCard = (projectId) => {
-    setProjects(projects.map(project => {
-      if (project.id === projectId) {
-        const newCard = {
-          id: Date.now(),
-          label: "New LLM Prompt",
-          description: loremIpsum()
-        }
-        return { ...project, cards: [...project.cards, newCard] }
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await axios.get('http://localhost:7070/projects/with-prompts')
+        setProjects(response.data)
+      } catch (error) {
+        console.error('Error fetching projects:', error)
       }
-      return project
-    }))
+    }
+    fetchProjects()
+  }, [])
+
+  const handleAddCard = (projectId: number) => {
+    router.push(`/prompt-editor?project_id=${projectId}`)
   }
 
-  const handleCardAction = (action, projectId, cardId) => {
+  const handleCardAction = (action: string, projectId: number, cardId: number) => {
     console.log(`Performing ${action} on card ${cardId} in project ${projectId}`)
     // Implement the actual functionality here
   }
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="flex h-screen" style={{ backgroundColor: 'var(--page-background)' }}>
       {/* Sidebar */}
       <div className="w-1/4 border-r border-border p-4">
         <h2 className="text-2xl font-bold mb-4">LLM Dashboard</h2>
@@ -81,7 +72,7 @@ export default function Page() {
         <ScrollArea className="h-[calc(100vh-2rem)]">
           {projects.map(project => (
             <section key={project.id} className="mb-8">
-              <h3 className="text-xl font-semibold mb-4">{project.title}</h3>
+              <h3 className="text-xl font-semibold mb-4">{project.name}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Add New Card Button */}
                 <Card className="border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
@@ -92,15 +83,15 @@ export default function Page() {
                 </Card>
 
                 {/* Project Cards */}
-                {project.cards.map(card => (
-                  <Card key={card.id} className="flex flex-col hover:shadow-md transition-shadow">
+                {project.prompts.map(prompt => (
+                  <Card key={prompt.id} className="flex flex-col hover:shadow-md transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 py-2 px-3">
-                      <Link href={`/prompt-editor?id=${card.id}`}>
+                      <Link href={`/prompt-editor?id=${prompt.id}`}>
                         <CardTitle
                           className="text-sm font-medium cursor-pointer text-primary hover:text-primary/80 active:text-primary/70 transition-colors"
-                          onClick={() => console.log(`Clicked on ${card.label}`)}
+                          onClick={() => console.log(`Clicked on ${prompt.name}`)}
                         >
-                          {card.label}
+                          {prompt.name}
                         </CardTitle>
                       </Link>
                       <DropdownMenu>
@@ -110,26 +101,26 @@ export default function Page() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleCardAction('download', project.id, card.id)}>
+                          <DropdownMenuItem onClick={() => handleCardAction('download', project.id, prompt.id)}>
                             Download
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleCardAction('insert', project.id, card.id)}>
+                          <DropdownMenuItem onClick={() => handleCardAction('insert', project.id, prompt.id)}>
                             Insert as code
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleCardAction('duplicate', project.id, card.id)}>
+                          <DropdownMenuItem onClick={() => handleCardAction('duplicate', project.id, prompt.id)}>
                             Duplicate
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleCardAction('rename', project.id, card.id)}>
+                          <DropdownMenuItem onClick={() => handleCardAction('rename', project.id, prompt.id)}>
                             Rename
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleCardAction('delete', project.id, card.id)}>
+                          <DropdownMenuItem onClick={() => handleCardAction('delete', project.id, prompt.id)}>
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </CardHeader>
                     <CardContent className="py-2 px-3">
-                      <p className="text-xs text-muted-foreground line-clamp-4">{card.description}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-5">{prompt.content}</p>
                     </CardContent>
                     <CardFooter className="flex justify-end space-x-1 py-1 px-2 mt-auto">
                       <Button variant="ghost" size="icon" className="h-6 w-6">

@@ -402,6 +402,16 @@ These commands grant the required permissions for the application to interact wi
 ### Docker Setup
 - Dockerfiles are provided for both the backend and frontend services.
 - Docker Compose is used to orchestrate multi-container deployment, including the PostgreSQL database.
+- DEVELOPMENT: configure `docker-compose.yml` to allow network communication with the host machine.
+  ```yaml
+  - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@host.docker.internal:${DATABASE_PORT}/${DATABASE_NAME}
+  ```
+  Configure `.env.docker` to reference the local database ``` DATABASE_HOST=host.docker.internal```
+- PRODUCTION: configure docker-compose to allow network communication within application containers.
+  ```yaml
+  - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@db:${DATABASE_PORT}/${DATABASE_NAME}
+  ```
+  Configure `.env.docker` to reference the containerized database ``` DATABASE_HOST=db```
 
 ### Docker Compose File
 - Located at the project root, `docker-compose.yml` defines services:

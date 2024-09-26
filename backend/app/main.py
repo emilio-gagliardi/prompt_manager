@@ -74,6 +74,11 @@ async def read_hello() -> str:
     return "hello world"
 
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
 if __name__ == "__main__":
     import uvicorn
 

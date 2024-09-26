@@ -1,6 +1,8 @@
 services:
   backend:
     build: ./backend
+    env_file:
+      - ./.env.docker
     environment:
       - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@host.docker.internal:${DATABASE_PORT}/${DATABASE_NAME}
       - APP_ENV=docker
@@ -8,16 +10,25 @@ services:
       - "7070:7070"
     volumes:
       - ./backend:/backend
-    depends_on:
-      - frontend
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://0.0.0.0:7070/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend/prompt_manager
+    env_file:
+      - ./.env.docker
     environment:
       - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@host.docker.internal:${DATABASE_PORT}/${DATABASE_NAME}
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/frontend
+      - /app/node_modules
+    command: npm run start
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy

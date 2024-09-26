@@ -1,36 +1,25 @@
 'use client'
 
-import React, { useState, useEffect, KeyboardEvent } from 'react'
+import React, { useState, useEffect, KeyboardEvent, Suspense } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { CopyIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CodeIcon, XIcon } from 'lucide-react'
+import { CopyIcon, ChevronLeftIcon, ChevronRightIcon, DownloadIcon, CodeIcon, XIcon, ArrowLeftIcon } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import axiosInstance from '../../api/axiosInstance'
 
-// Mock data for a single prompt
-const mockPrompt = {
-    id: 1,
-    title: "Customer Service Bot",
-    description: "A prompt for generating customer service responses",
-    category: "Conversational AI",
-    tags: "customer service, support, chatbot",
-    prompt: "You are a helpful customer service representative for a tech company. Your goal is to assist customers with their inquiries and resolve their issues in a friendly and efficient manner. Please provide a response to the following customer message:\n\n[Customer Message]",
-    variables: "[Customer Message]",
-    example_output: "Thank you for reaching out to our support team. I understand you're having an issue with [specific problem]. Let me help you with that. First, could you please provide me with your account email address so I can look up your information?",
-    notes: "This prompt can be customized for different types of customer service scenarios by modifying the company type and specific instructions."
-}
+
 interface Prompt {
-    id: number;
+    id?: number;
     name: string;
     content: string;
-    project_id: number;
-    created_at: string;
-    tags: string[] | null;
-    notes: string | null;
+    project_id: number | null;
+    created_at?: string;
+    tags?: string[] | null;
+    notes?: string | null;
 }
 
 const tagsStringToArray = (tags: string | null | undefined): string[] => {
@@ -50,7 +39,10 @@ interface FormFieldProps {
 
 const FormField: React.FC<FormFieldProps> = ({ label, name, value, onChange, fullWidth = false, multiline = false, disabled = false }) => (
     <div className={`mb-4 ${fullWidth ? 'w-full' : 'w-full md:w-1/2'} relative`}>
-        <Label htmlFor={name} className="text-sm font-medium text-muted-foreground mb-1 block">
+        <Label
+            htmlFor={name}
+            className="text-sm font-medium mb-1 block"
+        >
             {label}
         </Label>
         {multiline ? (
@@ -59,7 +51,7 @@ const FormField: React.FC<FormFieldProps> = ({ label, name, value, onChange, ful
                 name={name}
                 value={value}
                 onChange={onChange}
-                className="w-full min-h-[200px] resize-none pr-10"
+                className="w-full min-h-[200px] resize-none pr-10 border border-border bg-input text-foreground"
                 disabled={disabled}
             />
         ) : (
@@ -69,7 +61,7 @@ const FormField: React.FC<FormFieldProps> = ({ label, name, value, onChange, ful
                 name={name}
                 value={value}
                 onChange={onChange}
-                className="w-full pr-10"
+                className="w-full pr-10 border border-border bg-input text-foreground"
                 disabled={disabled}
             />
         )}
@@ -78,7 +70,7 @@ const FormField: React.FC<FormFieldProps> = ({ label, name, value, onChange, ful
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 hover:bg-primary/10"
                 onClick={() => navigator.clipboard.writeText(value)}
             >
                 <CopyIcon className="h-4 w-4" />
@@ -86,32 +78,89 @@ const FormField: React.FC<FormFieldProps> = ({ label, name, value, onChange, ful
         )}
     </div>
 )
-
-export default function Page() {
-    const [prompt, setPrompt] = useState<Prompt | null>(null);
+function PromptEditorContent() {
+    const [prompt, setPrompt] = useState<Prompt>({
+        name: '',
+        content: '',
+        project_id: null,
+        tags: [],
+        notes: ''
+    });
     const [promptContent, setPromptContent] = useState<string>("");
     const [variables, setVariables] = useState<{ [key: string]: string }>({});
     const [exampleOutput, setExampleOutput] = useState<string>("");
     const [tags, setTags] = useState<string[]>([]);
     const [tagInput, setTagInput] = useState<string>("");
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const [saveError, setSaveError] = useState<string | null>(null);
     const searchParams = useSearchParams();
-    const promptId = searchParams.get('id');
+    const promptId = searchParams ? searchParams.get('id') : null;
     const [currentPromptIndex, setCurrentPromptIndex] = useState<number>(0);
     const [promptIds, setPromptIds] = useState<number[]>([]);
     const router = useRouter();
     const [projectId, setProjectId] = useState<number | null>(null)
 
     useEffect(() => {
-        if (promptId) {
-            fetchPrompt(promptId);
+        if (typeof window !== 'undefined') {
+            const promptId = searchParams ? searchParams.get('id') : null;
+            const projectId = searchParams ? searchParams.get('project_id') : null;
+            console.log('Prompt ID:', promptId);
+            console.log('Project ID:', projectId);
+
+            if (promptId) {
+                fetchPrompt(promptId); // If a prompt ID is available, fetch the prompt.
+            } else if (projectId) {
+                // Set up for a new prompt
+                setLoading(true);
+                setPrompt(prev => ({
+                    ...prev,
+                    project_id: parseInt(projectId),
+                    name: '',
+                    content: '',
+                    tags: [],
+                    notes: ''
+                }));
+                setPromptContent('');
+                setVariables({});
+                setExampleOutput('');
+                setLoading(false);
+            } else {
+                // Handle the case where neither promptId nor projectId is provided
+                setError('No prompt ID or project ID provided');
+            }
         }
-    }, [promptId]);
+    }, [searchParams]);
 
+    const fetchPrompt = async (id: string) => {
+        try {
+            setLoading(true);
+            const response = await axiosInstance.get<Prompt>(`/prompts/${id}`);
+            const promptData = response.data;
+            console.log('Fetched prompt data:', promptData);
+            setPrompt(promptData);
+            setPromptContent(promptData.content);
 
+            const tagsString = Array.isArray(promptData.tags) ? promptData.tags.join(', ') : promptData.tags;
+            const parsedTags = tagsStringToArray(tagsString);
+            setTags(parsedTags);
+
+            const initialVariables = parseVariables(promptData.content);
+            setVariables(initialVariables);
+            setExampleOutput(generateExampleOutput(promptData.content, initialVariables));
+
+            if (promptData.project_id) {
+                setProjectId(promptData.project_id);
+                fetchPromptIds(promptData.project_id);
+            }
+        } catch (err) {
+            console.error('Error fetching prompt:', err);
+            setError('Failed to fetch prompt');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         if (promptId && promptIds.length > 0) {
@@ -156,42 +205,32 @@ export default function Page() {
         navigateToPrompt(currentPromptIndex + 1);
     };
 
-    const fetchPrompt = async (id: string) => {
-        try {
-            setLoading(true);
-            const response = await axiosInstance.get<Prompt>(`/prompts/${id}`);
-            const promptData = response.data;
-            console.log('Fetched prompt data:', promptData);
-            setPrompt(promptData);
-            setPromptContent(promptData.content);
-            const tagsString = Array.isArray(promptData.tags) ? promptData.tags.join(', ') : promptData.tags;
-            console.log('Tags string:', tagsString);
-            const parsedTags = tagsStringToArray(tagsString);
-            console.log('Parsed tags:', parsedTags);
-            setTags(parsedTags);
-            const initialVariables = parseVariables(promptData.content);
-            setVariables(initialVariables);
-            setExampleOutput(generateExampleOutput(promptData.content, initialVariables));
-            if (promptData.project_id) {
-                setProjectId(promptData.project_id)
-                fetchPromptIds(promptData.project_id)
-            }
-        } catch (err) {
-            console.error('Error fetching prompt:', err);
-            setError('Failed to fetch prompt');
-        } finally {
-            setLoading(false);
-        }
-    };
+
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         if (name !== 'content' && name !== 'tags' && name !== 'example_output') {
-            setPrompt(prevPrompt => prevPrompt ? { ...prevPrompt, [name]: value } : null);
+            setPrompt(prevPrompt => {
+                if (!prevPrompt) {
+                    // If prevPrompt is null or undefined, create a new Prompt object
+                    return {
+                        id: 0, // or any default value
+                        name: name === 'name' ? value : '',
+                        content: '',
+                        project_id: 0, // or any default value
+                        created_at: new Date().toISOString(),
+                        tags: [],
+                        notes: name === 'notes' ? value : null,
+                        [name]: value
+                    };
+                }
+                // If prevPrompt exists, update it
+                return { ...prevPrompt, [name]: value };
+            });
         }
     };
 
-    const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleContentChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const newContent = e.target.value;
         setPromptContent(newContent);
         const newVariables = parseVariables(newContent);
@@ -209,7 +248,14 @@ export default function Page() {
                 tags: tags.join(', ')
             };
             try {
-                const response = await axiosInstance.put(`/prompts/${prompt.id}`, promptToSave);
+                let response;
+                if (prompt.id) {
+                    // Update existing prompt
+                    response = await axiosInstance.put(`/prompts/${prompt.id}`, promptToSave);
+                } else {
+                    // Create new prompt
+                    response = await axiosInstance.post('/prompts/', promptToSave);
+                }
                 console.log("Prompt saved successfully:", response.data);
                 // updateExampleOutput(promptContent, variables);
             } catch (error) {
@@ -227,9 +273,9 @@ export default function Page() {
         setExampleOutput(generateExampleOutput(promptContent, newVariables));
     };
 
-    const updateExampleOutput = (content: string, vars?: { [key: string]: string }) => {
-        setExampleOutput(generateExampleOutput(content, vars || variables));
-    };
+    // const updateExampleOutput = (content: string, vars?: { [key: string]: string }) => {
+    //     setExampleOutput(generateExampleOutput(content, vars || variables));
+    // };
 
     const parseVariables = (content: string): { [key: string]: string } => {
         const regex = /{{(.*?)}}/g;
@@ -252,6 +298,11 @@ export default function Page() {
         }
         return output;
     };
+
+    const handleBack = () => {
+        console.log("Navigating back");
+        router.push('/');
+    }
 
     const handleCancel = () => {
         console.log("Cancelling edits");
@@ -307,7 +358,7 @@ ${prompt.notes || ''}
         setTagInput(e.target.value);
     };
 
-    const handleTagInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && tagInput.trim() !== '') {
             e.preventDefault();
             addTag(tagInput.trim());
@@ -327,27 +378,41 @@ ${prompt.notes || ''}
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error}</div>;
-    if (!prompt) return <div>No prompt found</div>;
+    if (!prompt.project_id) return <div>Invalid project ID</div>;
 
     return (
         <div className="flex h-screen bg-background text-foreground">
-            <div className="w-full p-4">
+            <div className="w-full p-4" style={{ backgroundColor: 'var(--page-background)' }}>
                 <ScrollArea className="h-[calc(100vh-2rem)]">
-                    <Card className="w-full max-w-4xl mx-auto">
+                    <div className="max-w-4xl mx-auto mb-4">
+                        <Button
+                            variant="outline"
+                            className="back-button"
+                            onClick={handleBack}
+                        >
+                            <ArrowLeftIcon className="mr-2 h-4 w-4" />
+                            Back
+                        </Button>
+                    </div>
+
+                    <Card className="w-full max-w-4xl mx-auto form-container">
                         <CardContent className="p-6">
                             <div className="flex justify-center space-x-4 mb-6">
-                                <Button variant="outline" onClick={handleDownloadJson}>
-                                    <DownloadIcon className="mr-2 h-4 w-4" />
-                                    Download as JSON
-                                </Button>
-                                <Button variant="outline" onClick={handleDownloadText}>
-                                    <DownloadIcon className="mr-2 h-4 w-4" />
-                                    Download as Text
-                                </Button>
-                                <Button variant="outline" onClick={handleInsertAsCode}>
-                                    <CodeIcon className="mr-2 h-4 w-4" />
-                                    Insert as Code
-                                </Button>
+                                {['Download as JSON', 'Download as Text', 'Insert as Code'].map((text, index) => (
+                                    <Button
+                                        key={index}
+                                        variant="outline"
+                                        className="border border-border text-foreground"
+                                        onClick={[handleDownloadJson, handleDownloadText, handleInsertAsCode][index]}
+                                    >
+                                        {[DownloadIcon, DownloadIcon, CodeIcon][index] &&
+                                            React.createElement([DownloadIcon, DownloadIcon, CodeIcon][index], {
+                                                className: "mr-2 h-4 w-4"
+                                            })
+                                        }
+                                        {text}
+                                    </Button>
+                                ))}
                             </div>
 
                             <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
@@ -361,10 +426,10 @@ ${prompt.notes || ''}
 
                                 {/* Tags Input */}
                                 <div className="mb-4 w-full relative">
-                                    <Label className="text-sm font-medium text-muted-foreground mb-1 block">Tags</Label>
+                                    <Label className="text-sm font-medium mb-1 block">Tags</Label>
                                     <div className="flex flex-wrap gap-2 mb-2">
                                         {tags.map((tag, index) => (
-                                            <span key={index} className="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm flex items-center">
+                                            <span key={index} className="px-2 py-1 rounded-full text-sm flex items-center bg-tagBackground text-tagText">
                                                 {tag}
                                                 <Button
                                                     variant="ghost"
@@ -380,10 +445,10 @@ ${prompt.notes || ''}
                                     <Input
                                         type="text"
                                         value={tagInput}
+                                        className="border border-border bg-input text-foreground"
                                         onChange={handleTagInputChange}
                                         onKeyDown={handleTagInputKeyDown}
                                         placeholder="Type a tag and press Enter"
-                                        className="w-full"
                                     />
                                 </div>
 
@@ -391,15 +456,15 @@ ${prompt.notes || ''}
                                 <FormField
                                     label="Content"
                                     name="content"
-                                    value={promptContent} // Bind to promptContent
-                                    onChange={handleContentChange} // Use 
+                                    value={promptContent}
+                                    onChange={handleContentChange}
                                     fullWidth
                                     multiline
                                 />
 
                                 {/* Variables Input */}
                                 <div className="mb-4 w-full">
-                                    <Label className="text-sm font-medium text-muted-foreground mb-1 block">Variables</Label>
+                                    <Label className="text-sm font-medium mb-1 block" >Variables</Label>
                                     {Object.entries(variables).map(([key, value]) => (
                                         <div key={key} className="mb-2">
                                             <Label htmlFor={key}>{key}</Label>
@@ -411,6 +476,7 @@ ${prompt.notes || ''}
                                                     handleVariableChange(key, newValue);
                                                 }}
                                                 placeholder={`Enter value for ${key}`}
+                                                className="border border-border bg-input text-foreground"
                                             />
                                         </div>
                                     ))}
@@ -438,8 +504,8 @@ ${prompt.notes || ''}
                                 />
 
                                 <div className="flex justify-end space-x-4 mt-6">
-                                    <Button variant="outline" onClick={() => console.log("Cancel edits")}>Cancel</Button>
-                                    <Button type="submit" disabled={isSaving}>
+                                    <Button variant="outline" className="cancel-button" onClick={() => console.log("Cancel edits")}>Cancel</Button>
+                                    <Button type="submit" className="save-button" disabled={isSaving}>
                                         {isSaving ? 'Saving...' : 'Save'}
                                     </Button>
                                 </div>
@@ -449,11 +515,21 @@ ${prompt.notes || ''}
                     </Card>
 
                     <div className="flex justify-between items-center mt-6 max-w-4xl mx-auto">
-                        <Button variant="ghost" onClick={handlePreviousPrompt} disabled={currentPromptIndex === 0}>
+                        <Button
+                            variant="ghost"
+                            className="nav-button"
+                            onClick={handlePreviousPrompt}
+                            disabled={currentPromptIndex === 0}
+                        >
                             <ChevronLeftIcon className="mr-2 h-4 w-4" />
                             Previous Prompt
                         </Button>
-                        <Button variant="ghost" onClick={handleNextPrompt} disabled={currentPromptIndex === promptIds.length - 1}>
+                        <Button
+                            variant="ghost"
+                            className="nav-button"
+                            onClick={handleNextPrompt}
+                            disabled={currentPromptIndex === promptIds.length - 1}
+                        >
                             Next Prompt
                             <ChevronRightIcon className="ml-2 h-4 w-4" />
                         </Button>
@@ -461,5 +537,13 @@ ${prompt.notes || ''}
                 </ScrollArea>
             </div>
         </div>
-    )
+    );
+}
+export default function Page() {
+
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <PromptEditorContent />
+        </Suspense>
+    );
 }

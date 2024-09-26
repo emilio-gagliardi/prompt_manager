@@ -3,21 +3,34 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --page-background: #010409;
+  --form-background: #0D1117;
+  --foreground: #ffffff;
+  --input-background: #0D1117;
+  --input-border: #3d444d;
+  --label-color: #adb8c4;
+  --button-text: #ffffff;
+  --button-background: #21262d;
+  --button-hover: #30363d;
+  --highlight-color: #58a6ff;
+  --tag-background: #1f6feb;
+  --tag-text: #ffffff;
+  --back-button-text: #ffffff;
+  --back-button-background: #262C36;
+  --back-button-border: #3d444d;
+  --save-button-background: #58a6ff;
+  --save-button-border: #3d444d;
+  --save-button-text: #ffffff;
+  --cancel-button-background: #303b4d;
+  --cancel-button-border: #303b4d;
+  --cancel-button-text: #ffffff;
 }
 
 body {
+  background-color: var(--page-background);
   color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Fira Code', monospace;
+  letter-spacing: 1px;
 }
 
 @layer utilities {
@@ -54,6 +67,7 @@ body {
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
@@ -86,7 +100,71 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.form-container {
+  background-color: var(--form-background);
+  border: none;
+}
+
+input,
+textarea {
+  border: 1px solid var(--border);
+  background-color: var(--input);
+  color: var(--foreground);
+}
+
+label {
+  color: var(--label-color);
+}
+
+button {
+  border-color: var(--button-border);
+  color: var(--button-text);
+  background-color: var(--button-background);
+}
+
+button.back-button {
+  border-color: var(--back-button-border);
+  color: var(--back-button-text);
+  background-color: var(--back-button-background);
+}
+
+button.save-button {
+  border-color: #58a6ff;
+  border-width: 2px;
+  color: var(--save-button-text);
+  background-color: var(--save-button-background);
+}
+
+button.save-button:hover {
+  border-color: #58a6ff;
+  border-width: 2px;
+}
+
+button.cancel-button {
+  border-color: var(--cancel-button-border);
+  color: var(--cancel-button-text);
+  background-color: var(--cancel-button-background);
+}
+
+button.nav-button {
+  background-color: var(--nav-button-background);
+  color: var(--nav-button-text);
+}
+
+button:hover {
+  background-color: var(--button-hover);
+}
+
+.bg-tagBackground {
+  background-color: var(--tag-background);
+}
+
+.text-tagText {
+  color: var(--tag-text);
 }

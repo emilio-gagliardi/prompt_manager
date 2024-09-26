@@ -3,15 +3,15 @@ FROM python:3.11-slim
 # Set the working directory inside the container
 WORKDIR /backend
 
-# Copy the requirements file and install dependencies
-COPY backend/requirements.txt .
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl
+
+# Copy the requirements file from the root directory and install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code into the container
-COPY backend/ .
-
-# Ensure the .env.docker file is included in the container
-COPY backend/.env.docker .
+# Copy the entire backend code
+COPY . .
 
 # Expose the port the app will run on
 EXPOSE 7070
