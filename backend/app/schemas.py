@@ -63,3 +63,10 @@ class PromptFeedback(PromptFeedbackBase):
 
 class ProjectIdQuery(BaseModel):
     project_id: int = Field(..., description="The ID of the project")
+
+
+class ProjectWithPrompts(Project):
+    prompts: List[Prompt]
+
+    class Config:
+        from_attributes = True

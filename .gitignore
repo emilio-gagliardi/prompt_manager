@@ -41,6 +41,7 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+.env.docker
 
 # Build files
 /build

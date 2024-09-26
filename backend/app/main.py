@@ -23,19 +23,24 @@ The application will start and be accessible at http://localhost:7070.
 Note: The `Depends` import is currently unused and can be removed if not needed in future implementations.
 """
 
+from app.config import get_settings
 import logging
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlalchemy.exc import OperationalError
 from app.database import SessionLocal, check_database_connection
-from app.config import get_settings
+
 from app.routers import projects, prompts
+
+# , prompts
+
+settings = get_settings()
+settings.add_root_to_sys_path()
+print(f"{settings.root_directory}")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-settings = get_settings()
 
 
 @asynccontextmanager
@@ -72,4 +77,5 @@ async def read_hello() -> str:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=7070)
+    print("Starting FastAPI application")
+    uvicorn.run(app, host="0.0.0.0", port=7070, reload=True)

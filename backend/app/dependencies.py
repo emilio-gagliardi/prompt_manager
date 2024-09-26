@@ -1,6 +1,6 @@
 # backend/app/dependencies.py
 from fastapi import Depends, HTTPException, status
-from .database import SessionLocal
+from app.database import SessionLocal
 
 
 def get_db():
